@@ -1,0 +1,1 @@
+This folder is intentionally left empty. This is where your runtime generated data will be located. Plugins like list and dict use this folder alot and errors will be thrown if it does not exist.

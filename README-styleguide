@@ -1,0 +1,9 @@
+Do your best to follow PEP8.
+
+Here is a summation of the relevant bits:
+
+Modules should be short and all lowercase. If multiple words, seperate with underscore
+Class names should be CapWords (CamelCase)
+Functions, methods, and variables should have all lowercase words separated with underscores. Use leading underscore to indicate that the method is not ment to be used outside of the class.
+Constants should be all caps separated by underscores.
+
