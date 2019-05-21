@@ -7,10 +7,11 @@ import sys
 import os
 import time
 
-import janteio.basicio
-from jantemessage import JanteMessage
+from .basicio import BasicIO
 
-class LocalIO(janteio.basicio.BasicIO):
+from ..jantemessage import JanteMessage
+
+class LocalIO(BasicIO):
 
     def __init__(self, bot):
         super(LocalIO, self).__init__(bot)

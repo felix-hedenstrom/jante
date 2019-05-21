@@ -1,4 +1,5 @@
 """
+@Author Felix Hedenström
 args is a list containing arrays with sames sizes.
 Example:
 calling getTable([names, numberofgoals], ["Names", "Goals"])
@@ -13,7 +14,7 @@ will return a string that looks like
 |alex |7    |
 +-----+-----+
 """
-def getTable(args, legend = []):
+def get_table(args, legend = []):
     colums = len(args)
     rows = len(args[0])
 
@@ -54,8 +55,3 @@ def getTable(args, legend = []):
         ans += "\n"
     ans += line
     return ans
-"""    
-names  = ["bob", "peter", "alex"]
-numberofgoals = [4, 5, 7]
-print (getTable([names, numberofgoals], ["Names", "Goals"], False))
-"""

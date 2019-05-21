@@ -9,7 +9,6 @@ plugin matching the prefix specified in the command.
 '''
 
 import sys
-sys.path.append('./libs')
 
 import shlex, argparse
 
@@ -32,13 +31,12 @@ import queue
 import plugins
 
 # Helpful jantespecific libraries
-import jantehttpd
-from jantemessage import JanteMessage
-import eventhost
-import jantetable
-import janteio.iomanager
+from libs.jantehttpd import JanteHTTPD
+from libs.jantemessage import JanteMessage
+from libs.eventhost import EventHost
+from libs.jantetable import get_table 
+from libs.janteio.iomanager import IOManager
 from libs.servicemanager.servicemanager import ServiceManager
-
 
 class Bot:
     def offer_service(self, name, service):
@@ -69,7 +67,7 @@ class Bot:
 
         plugins.import_all(self._config)
 
-        self._io = janteio.iomanager.IOManager(iotype, self)
+        self._io = IOManager(iotype, self)
         
         self._httpd = None
         self._httpd_routes = dict()
@@ -84,7 +82,7 @@ class Bot:
             def write(self, message):
                 self.io.log(message)
 
-        self._events = eventhost.EventHost(IOLoggerAdapter(self._io))
+        self._events = EventHost(IOLoggerAdapter(self._io))
         # function call prototype (keyword spec) for stock events
         def on_message(message): pass
         def on_message_sent(message): pass
@@ -334,7 +332,6 @@ class Bot:
         try:
 
             #imp.reload(plugins)
-            #import plugins
             #reimport.reimport(plugins)
             #xreload.xreload(plugins)
             self._loadplugins()
@@ -565,14 +562,17 @@ def main(argv):
     g.add_argument('-b', '--barebones', action='store_const', const="old", dest="io", help="Use a barebones local IO system. Mainly for testing things on a local machine. Less functional than --local.")
     g.add_argument('-o', '--old', action='store_const', const="old", dest="io", help="Deprecated name for -b.")
     g.add_argument('-l', '--local', action='store_const', const="local", dest="io", help="Use a curses based local IO system. Mainly for testing things on a local machine.")
-    g.add_argument('-t', '--test', action='store_const', const="local", dest="io",  help="Same as -l")
+
+
+
 
     # Parse arguments
     args = parser.parse_args(argv)
+    
 
+    # Run the bot as you would normally
     b = Bot(args.io, 'bot-settings.ini')
     b.start()
-
 
 if __name__ == "__main__":
     main(sys.argv[1:])

@@ -7,13 +7,8 @@ import html
 import math
 import configparser
 
-if __name__ == '__main__':
-    import sys
-    sys.path.append('../..')
-    sys.path.append('../../libs')
-
-from plugins.parsingplugintemplate import ParsingPluginTemplate
-import jantepastedb
+from ..parsingplugintemplate import ParsingPluginTemplate
+from libs.jantepastedb import quickpost, JantePasteDB 
 
 from libs.servicemanager.service import Service
 
@@ -24,7 +19,7 @@ class JantePastePlugin(ParsingPluginTemplate):
         
         super(JantePastePlugin, self).__init__(bot,command=self._config.get('paste', 'command', fallback='paste'), description='A pastebin designed to be used with the janteweb feature. Offers the pasting service.')
         
-        self.paste_db = jantepastedb.JantePasteDB()
+        self.paste_db = JantePasteDB()
         bot.register_web_route('/paste', self.webparse)
         
         pasting_service = Service("""

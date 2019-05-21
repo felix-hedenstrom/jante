@@ -9,8 +9,9 @@ import threading
 import datetime
 import traceback
 
-import janteio.basicio
-from jantemessage import JanteMessage
+from .basicio import BasicIO
+
+from ..jantemessage import JanteMessage
 
 KEY_ESCAPE = '\x1b'
 KEY_BACKSPACE = 263
@@ -20,7 +21,7 @@ KEY_UPARROW = 259
 KEY_DOWNARROW = 258
 KEY_RETURN = '\n'
 
-class LocalCursesIO(janteio.basicio.BasicIO):
+class LocalCursesIO(BasicIO):
     class errorRedirector():
         def __init__(self, IO):
             self._io = IO
@@ -114,7 +115,7 @@ class LocalCursesIO(janteio.basicio.BasicIO):
                 # TODO: have basicIO have some facility of notifying users that IO
                 # TODO: .. is closing / has been closed, and replace this hack with it
                 #quit()
-                return JanteMessage('QUIT', address='QUIT', sender='QUIT')
+                return jantemessage('QUIT', address='QUIT', sender='QUIT')
             elif key == KEY_BACKSPACE:
                 if self.input_pos[1] > 1:
                     self.input_text = self.input_text[:-1] # chop off last char of input
@@ -132,7 +133,7 @@ class LocalCursesIO(janteio.basicio.BasicIO):
                 self.input_pane.addstr(self.input_pos[0], self.input_pos[1], ' ' * (curses.COLS - 2)) # visually erase input pane
                 self.input_pane.refresh()
 
-                return JanteMessage(theinput, sender=str(os.environ.get('USER')), recipient='#Local', address='#Local')
+                return jantemessage(theinput, sender=str(os.environ.get('USER')), recipient='#Local', address='#Local')
             elif key == KEY_UPARROW:
                 if len(self.input_history) > 0 and self.input_history_pos > 0: # history not empty
                     if self.input_history_pos == len(self.input_history): # sitting at end

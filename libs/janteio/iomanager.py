@@ -2,8 +2,9 @@
 @Author Felix Hedenström
 """
 
-import janteio.localio
-import janteio.localcursesio
+from .localio import LocalIO
+from .localcursesio import LocalCursesIO
+from .testingio import TestingIO
 
 import traceback
 import sys
@@ -32,24 +33,26 @@ class IOManager:
     """
     Wrapper for the different IO classes. Mainly to remove io imports and creation from bot.py
     """
-    def __init__(self, _type, bot): 
+    def __init__(self, type_, bot): 
         """
-        _type is a string describing the IO
+        type_ is a string describing the IO
 
         """
         self._bot = bot
-        if _type == "xmpp":
+        if type_ == "xmpp":
             self._io = janteio.xmpp.xmppio.XMPPIO(self._bot)
-        elif _type == "irc":
+        elif type_ == "irc":
             self._io = janteio.ircio.IRCIO(self._bot)
-        elif _type == "old":
-            self._io = janteio.localio.LocalIO(self._bot)
-        elif _type == "local":
-            self._io = janteio.localcursesio.LocalCursesIO(self._bot)
-        elif _type == "discord": 
+        elif type_ == "old":
+            self._io = LocalIO(self._bot)
+        elif type_ == "local":
+            self._io = LocalCursesIO(self._bot)
+        elif type_ == "discord": 
             self._io = janteio.discord.discordio.discordIO(self._bot)
+        elif type_ == "dummy":
+            self._io = TestingIO(self._bot) 
         else:
-            self._io = janteio.localcursesio.LocalCursesIO(self._bot)
+            self._io = LocalCursesIO(self._bot)
     def log(self, text):
         self._io.log(text)
     def recieve(self):
