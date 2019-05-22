@@ -10,9 +10,10 @@ import traceback
 import sys
 
 def missing_io(name):
-    errormsg = traceback.format_exc()
-    sys.stderr.write(errormsg)
-    sys.stderr.write("Could not load {io}... Continuing since it is optional\n".format(io=name))
+    if False:
+        errormsg = traceback.format_exc()
+        sys.stderr.write(errormsg)
+        sys.stderr.write("Could not load {io}... Continuing since it is optional\n".format(io=name))
     
 
 try:
@@ -49,7 +50,7 @@ class IOManager:
             self._io = LocalCursesIO(self._bot)
         elif type_ == "discord": 
             self._io = janteio.discord.discordio.discordIO(self._bot)
-        elif type_ == "dummy":
+        elif type_ == None:
             self._io = TestingIO(self._bot) 
         else:
             self._io = LocalCursesIO(self._bot)

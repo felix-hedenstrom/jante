@@ -21,7 +21,7 @@ import threading
 
 import inspect
 import os
-
+from datetime import datetime, timedelta
 # Parses settings.ini
 import configparser
 
@@ -39,6 +39,52 @@ from libs.janteio.iomanager import IOManager
 from libs.servicemanager.servicemanager import ServiceManager
 
 class Bot:
+    class Evaluator:
+        #TODO
+        #this probably should be here
+        #race conditions if multiple commands are run at the same time
+        def __init__(self, bot):
+            self._id = 0
+            self._bot = bot
+            self._message_mutex = threading.Lock()
+            
+            def message_filter(message):
+                return message.get_address() == self.generate_id()
+        
+            self._bot.add_event_listener('on_message_sent', self.listener, prefilter=message_filter)
+            self._messages = []
+        
+        def listener(self, message):
+            with self._message_mutex:
+                self._messages.append(message)
+
+        def has_incoming_message(self):
+            with self._message_mutex:
+                return not len(self._messages) == 0 
+
+        def evaluate(self, m, timeout=5):
+            self._bot.fire_event('on_message', message=m)
+            timeout = datetime.now() + timedelta(seconds=timeout)
+            
+            while(not self.has_incoming_message() and datetime.now() < timeout):
+                time.sleep(0.02)
+            
+            if not datetime.now() < timeout:
+                return RuntimeError("Ran out of time on command {}.".format(m.get_text()))
+         
+            with self._message_mutex:
+                inc_message = self._messages.pop()
+                self._messages = []
+
+            return inc_message
+        
+        def generate_message(self, text):
+            return JanteMessage(text, sender="testbot", address=self.generate_id())
+        
+        def generate_id(self):
+            with self._message_mutex:
+                return ("testing", self._id)
+        
     def offer_service(self, name, service):
         """
         Used by plugins to offer services like dictionaries. Name is the name of the service and
@@ -52,18 +98,16 @@ class Bot:
         return self._service_manager.get_service(name)
 
     # setup connection as defined per settings
-    def __init__(self, iotype, settingsfilename):
+    def __init__(self, iotype, settingsfile, testing=False):
         self._shutdown_called = False
         self._muted = False
         self._mutex = threading.Lock()
         self._threads = []
         self._threadlimit = 20
-        self._messageQueue = queue.Queue()
+        self._message_queue = queue.Queue()
         self._commands = dict()
-
-        self._config = configparser.ConfigParser()
-
-        self._config.read(settingsfilename)
+        self._config = settingsfile 
+        
 
         plugins.import_all(self._config)
 
@@ -137,7 +181,8 @@ class Bot:
 
         t = threading.Thread(target=timerThread, name="TimerThreadMain - Sends on_timer_tick events")
         t.start()
-
+        
+        self._evaluator = Bot.Evaluator(self)
         with self._mutex:
             self._threads.append(t)
 
@@ -288,7 +333,7 @@ class Bot:
         message = self.configure_alias(message)
         self.log('enqueued a message: {}'.format(message.get_text()))
 
-        self._messageQueue.put(message)
+        self._message_queue.put(message)
 
     def _waitForThreads(self, threadsthatshouldlive=2):
         """
@@ -411,37 +456,38 @@ class Bot:
                             self._config['webjante']['sslkeyfile'], self._config['webjante']['sslcertfile'])
         else:
             self.log("Webjante not configured to start.")
-
         self.log("Starting mainbot!")
-
         # start the sending thread
         def send_messages():
             while not self._shutdown_called:
-                if not self._muted and not self._messageQueue.empty():
-                    messagetosend = self._messageQueue.get()
-                    if messagetosend.get_address() == None or messagetosend.get_address() == "":
+                if not self._muted and not self._message_queue.empty():
+                    message_to_send = self._message_queue.get()
+                    if message_to_send.get_address() == None or message_to_send.get_address() == "":
                         self.error("ATTEMPTED TO SEND MESSAGE WITHOUT ADDRESS.")
                         time.sleep(0.05)
-                    elif type(messagetosend.get_address()) == tuple:
+                    elif type(message_to_send.get_address()) == tuple:
+                        
                         # Internal message.
-                        self.log('Internal message sent with id "{}"'.format(messagetosend.get_address()))
-                        self.fire_event('on_message_sent', message=messagetosend)
+                        self.log('Internal message sent with id "{}"'.format(message_to_send.get_address()))
+                        self.fire_event('on_message_sent', message=message_to_send)
                     else:
-                        self.log('Sending message to address "{}"'.format(messagetosend.get_address()))
+                        self.log('Sending message to address "{}"'.format(message_to_send.get_address()))
 
-                        if issubclass(type(messagetosend.get_text()), BaseException):
+                        if issubclass(type(message_to_send.get_text()), BaseException):
                         # Errors should be formatted correctly before they are sent to external sources
-                            messagetosend.set_text("{}-exception::{}: {}".format(messagetosend.get_sender(), type(messagetosend.get_text()).__name__, messagetosend.get_text().args[0]))
+                            message_to_send.set_text("{}-exception::{}: {}".format(message_to_send.get_sender(), type(message_to_send.get_text()).__name__, message_to_send.get_text().args[0]))
 
-                        self._io.send(messagetosend)
-                        self.fire_event('on_message_sent', message=messagetosend)
+                        self._io.send(message_to_send)
+                        self.fire_event('on_message_sent', message=message_to_send)
                         time.sleep(0.05)
                 else:
                     time.sleep(0.1)
+        
         t = threading.Thread(target=send_messages, name="send_messages_main - Triggers on_message_sent")
+        
         t.start()
+        
         self._threads.append(t)
-
         while not self._shutdown_called:
             message = self._io.recieve()
 
@@ -529,11 +575,28 @@ class Bot:
         if __debug__:
             self.log("Unregistering httpd route {}".format(route))
         del self._httpd_routes[route]
-
+    
+    def evaluate(self, command, timeout=5, with_message=False, return_message=False):
+        # Evaluates a command as it was sent through a chat
+        if with_message:
+            m = command
+        else:
+            m = self._evaluator.generate_message(command)
+        
+        r = self._evaluator.evaluate(m, timeout=timeout)    
+        
+        if return_message:
+            return r
+        else:
+            if type(r) == JanteMessage:
+                return r.get_text()
+            else:
+                return r
     def clear_web_routes(self):
         self.log("Clearing httpd routes")
         self._httpd_routes = dict()
-
+    def shutdown(self):
+        self._shutdown()
     def _shutdown(self):
         self.fire_event("should_save")
         self._shutdown_called = True
@@ -564,14 +627,13 @@ def main(argv):
     g.add_argument('-l', '--local', action='store_const', const="local", dest="io", help="Use a curses based local IO system. Mainly for testing things on a local machine.")
 
 
-
-
     # Parse arguments
     args = parser.parse_args(argv)
     
-
+    config = configparser.ConfigParser()
+    config.read('bot-settings.ini')
     # Run the bot as you would normally
-    b = Bot(args.io, 'bot-settings.ini')
+    b = Bot(args.io, config,testing=False)
     b.start()
 
 if __name__ == "__main__":
