@@ -39,51 +39,6 @@ from libs.janteio.iomanager import IOManager
 from libs.servicemanager.servicemanager import ServiceManager
 
 class Bot:
-    class Evaluator:
-        #TODO
-        #this probably should be here
-        #race conditions if multiple commands are run at the same time
-        def __init__(self, bot):
-            self._id = 0
-            self._bot = bot
-            self._message_mutex = threading.Lock()
-            
-            def message_filter(message):
-                return message.get_address() == self.generate_id()
-        
-            self._bot.add_event_listener('on_message_sent', self.listener, prefilter=message_filter)
-            self._messages = []
-        
-        def listener(self, message):
-            with self._message_mutex:
-                self._messages.append(message)
-
-        def has_incoming_message(self):
-            with self._message_mutex:
-                return not len(self._messages) == 0 
-
-        def evaluate(self, m, timeout=5):
-            self._bot.fire_event('on_message', message=m)
-            timeout = datetime.now() + timedelta(seconds=timeout)
-            
-            while(not self.has_incoming_message() and datetime.now() < timeout):
-                time.sleep(0.02)
-            
-            if not datetime.now() < timeout:
-                return RuntimeError("Ran out of time on command {}.".format(m.get_text()))
-         
-            with self._message_mutex:
-                inc_message = self._messages.pop()
-                self._messages = []
-
-            return inc_message
-        
-        def generate_message(self, text):
-            return JanteMessage(text, sender="testbot", address=self.generate_id())
-        
-        def generate_id(self):
-            with self._message_mutex:
-                return ("testing", self._id)
         
     def offer_service(self, name, service):
         """
@@ -182,7 +137,6 @@ class Bot:
         t = threading.Thread(target=timerThread, name="TimerThreadMain - Sends on_timer_tick events")
         t.start()
         
-        self._evaluator = Bot.Evaluator(self)
         with self._mutex:
             self._threads.append(t)
 
@@ -202,7 +156,7 @@ class Bot:
             else:
                 return False
 
-    def getConfig(self, section=None):
+    def get_config(self, section=None):
         if section == None:
             return copy.copy(self._config)
         else:
@@ -214,13 +168,13 @@ class Bot:
     def get_nick(self):
         return self._config['global']['nick']
 
-    def getCommandPrefix(self):
+    def get_command_prefix(self):
         return self._config['global']['prefix']
     def get_base_data_path(self):
         return '{datadir}'.format(datadir=self._config['global']['datapath'])
     def paste(self, text, message=None):
         return self.get_service("paste").paste(text, message)
-    def getDataPath(self, plugname, filename):
+    def get_data_path(self, plugname, filename):
         if plugname == 'anagram': # TODO: get rid of this special case
             return '{datadir}/{plugdir}/{filename}'.format(
                 datadir=self._config['global']['datapath'], plugdir=plugname, filename=filename)
@@ -228,20 +182,20 @@ class Bot:
             return '{datadir}/{filename}'.format(
                 datadir=self._config['global']['datapath'], filename=filename)
 
-    def createEvent(self, eventName, prototype):
-        self._events.createEvent(eventName, prototype)
+    def create_event(self, event_name, prototype):
+        self._events.create_event(event_name, prototype)
 
-    def destroyEvent(self, eventName):
-        self._events.destroyEvent(eventName)
+    def destroy_event(self, event_name):
+        self._events.destroy_event(event_name)
 
-    def add_event_listener(self, eventName, target, prefilter=None, preprocessor=None):
-        self._events.add_event_listener(eventName, target, prefilter, preprocessor)
+    def add_event_listener(self, event_name, target, prefilter=None, preprocessor=None):
+        self._events.add_event_listener(event_name, target, prefilter, preprocessor)
 
-    def removeEventListener(self, eventName, target, prefilter=None, preprocessor=None):
-        self._events.removeEventListener(eventName, target, prefilter, preprocessor)
+    def remove_event_listener(self, event_name, target, prefilter=None, preprocessor=None):
+        self._events.remove_event_listener(event_name, target, prefilter, preprocessor)
 
-    def fire_event(self, eventName, **kwargs):
-        self._threads += self._events.fire_event(eventName, **kwargs)
+    def fire_event(self, event_name, **kwargs):
+        self._threads += self._events.fire_event(event_name, **kwargs)
     
     def number_of_threads(self):
         self._pruneThreads()
@@ -249,11 +203,8 @@ class Bot:
             n = len(self._threads)
         return n
 
-    def getCommands(self):
+    def get_commands(self):
         return copy.copy(self._commands)
-
-    #def getEvents(self):
-    #    return self._events
 
     def add_command_listener(self, command, callback, strip_preamble=False, direct_reply=False):
         """
@@ -576,22 +527,6 @@ class Bot:
             self.log("Unregistering httpd route {}".format(route))
         del self._httpd_routes[route]
     
-    def evaluate(self, command, timeout=5, with_message=False, return_message=False):
-        # Evaluates a command as it was sent through a chat
-        if with_message:
-            m = command
-        else:
-            m = self._evaluator.generate_message(command)
-        
-        r = self._evaluator.evaluate(m, timeout=timeout)    
-        
-        if return_message:
-            return r
-        else:
-            if type(r) == JanteMessage:
-                return r.get_text()
-            else:
-                return r
     def clear_web_routes(self):
         self.log("Clearing httpd routes")
         self._httpd_routes = dict()
