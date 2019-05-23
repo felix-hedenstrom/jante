@@ -10,18 +10,16 @@ plugin matching the prefix specified in the command.
 
 import sys
 
-import shlex, argparse
+import argparse
 
 import copy
-import time, getopt
-import signal
-import re, time
+import time 
+import re
 import traceback
 import threading
 
 import inspect
-import os
-from datetime import datetime, timedelta
+#import os
 # Parses settings.ini
 import configparser
 
