@@ -68,7 +68,7 @@ class AliasManagerPlugin(ParsingPluginTemplate):
         self._config = configparser.ConfigParser()
         self._config.read("plugins/alias/settings.ini")
 
-        super().__init__(bot, command=self._config.get('alias','command', fallback='alias'), description="Talk with jante!")
+        super().__init__(bot, command=self._config.get('alias','command', fallback='alias'), description="Configure the alias of the user if this feature is enabled.")
         
         # Syntax for the base way of adding an alias
         self._regex = "^\s*[aA][dD]{2}\s+([\w\-\_]+)\s+[tT][oO]\s+([\w\-\_]+)\s*$"
@@ -78,9 +78,18 @@ class AliasManagerPlugin(ParsingPluginTemplate):
             
         self._pendingaccepts = []
 
+        
+        aliasing_service = Service("""
+                                  Create aliases for users. 
+                                  """)
+
+        aliasing_service.add_function("get_alias", self.get_alias , "Get the alias of a sender.")
+        
+        self._bot.offer_service("alias", aliasing_service) 
+
     def parse(self, message):
         #TODO port to jargparse
-        if not self._bot.getConfig().getboolean('global', 'use_aliases'):
+        if not self._bot.get_config().getboolean('global', 'use_aliases'):
             return "Aliases are not in use. This plugin should probably be disabled"
             
         argv = shlex.split(message.get_text())
@@ -90,7 +99,8 @@ class AliasManagerPlugin(ParsingPluginTemplate):
             opts, nonopts = getopt.getopt(argv, 'hc:a:p',
             ["help", "my-alias", "create=", "accept=", "owners=", "exists=", "pending"])
         except:
-            return ("Not a valid option. Please try another or check out {prefix}{command} --help.".format(prefix=self._config['global']['prefix'], command=self._config['alias']['command']))
+            return "Not a valid option. Please try another or check out {prefix}{command} --help.".format(prefix=self._bot.get_config().get('global','prefix'), command=self._bot.get_config().get('alias','command'))
+        
             
         for opt in opts:
             
@@ -98,13 +108,13 @@ class AliasManagerPlugin(ParsingPluginTemplate):
                 return self._bot.paste(self.__doc__)
                 
             if opt[0] == '--my-alias':
-                return message.getAlias()
+                return message.get_alias()
                 
                 
             if opt[0] == '-c' or opt[0] == '--create':
-                if len(opt[1]) < int(self._config['alias']['minaliaslength']):
-                    return "Alias must be at least {} characters long.".format(self._config['alias']['minaliaslength'])
-                if not self._manager.newAlias(opt[1].strip(), message.getSender()):
+                if len(opt[1]) < int(self._config.get('alias', 'min_alias_length', fallback=3)):
+                    return "Alias must be at least {} characters long.".format(self._config.get('alias','min_alias_length', fallback=3))
+                if not self._manager.new_alias(opt[1].strip(), message.get_sender()):
                     return 'Can\'t create alias "{}". Does it already exist?'.format(opt[1])
                 
                 return 'Created alias "{}". It is now your alias.'.format(opt[1].strip())
@@ -129,7 +139,7 @@ class AliasManagerPlugin(ParsingPluginTemplate):
                 return self._bot.paste(ans)
             
             if opt[0] == '--accept' or opt[0] == '-a':
-                account = message.getSender()
+                account = message.get_sender()
                 for i in range(len(self._pendingaccepts)):
                     pa = self._pendingaccepts[i]
                     if pa[0] == account:
@@ -153,21 +163,21 @@ class AliasManagerPlugin(ParsingPluginTemplate):
             #print(alias)
             account = matching.group(1)
             owners = self._manager.getOwners(alias)
-            if not message.getSender() in owners:
+            if not message.get_sender() in owners:
                 if len(owners) == 0:
                     return "Alias \"{}\" does not exists.".format(alias) 
                 return "You are not a owner of the alias \"{}\".".format(alias)
-            self._pendingaccepts += [(account, alias, message.getSender())]
+            self._pendingaccepts += [(account, alias, message.get_sender())]
             return 'Added pending invitation to alias "{}". Waiting for account "{}" to accept.'.format(alias, account)
             
             
-        return "Must specify an option. Use {}{} --help to see see options.".format(self._config['global']['prefix'], self._config['alias']['command'])
+        return "Must specify an option. Use {}{} --help to see see options.".format(self._bot.get_config().get('global', 'prefix'), self._config.get('alias','command', fallback="alias"))
         
     def get_alias(self, sender):
         if not type(sender) == str:
             raise ValueError("Sender must be a string. Was a {}.".format(type(sender)))
-        ans = self._manager.getAlias(sender)
+        ans = self._manager.get_alias(sender)
         if ans == None:
-            return "{}{}".format(self._config['alias']['prerealnamesymbol'], sender)
-        return "{}{}".format(self._config['alias']['prealiassymbol'], ans) 
+            return "{}{}".format(self._config.get('alias', 'real_name_prefix', fallback="@"), sender)
+        return "{}{}".format(self._config.get('alias', 'alias_prefix', fallback="#"), ans) 
         

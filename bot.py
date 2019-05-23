@@ -116,11 +116,6 @@ class Bot:
         self.add_command_listener('plugins', plugins_IO)
         self.add_command_listener('save', save_command)
 
-        if self._config.getboolean('global', 'useAliases', fallback=False):
-            #TODO abstract out self._aliasmanager = alias.aliasmanager.aliasmanager(self)
-            self._aliasmanager = None
-        else:
-            self._aliasmanager = None
 
         self._loadplugins()
 
@@ -270,12 +265,13 @@ class Bot:
         Sets alias if configured to do so,
         does nothing if alias not configured to be used.
         """
-        if self._aliasmanager == None:
+        if not self._config.getboolean('global', 'use_aliases', fallback=False):
             message.set_alias(message.get_sender())
             return message
         else:
             # Add alias to message
-            message.set_alias(self._aliasmanager.get_alias(message.get_sender()))
+            alias = self._service_manager.get_service("alias").get_alias(message.get_sender()) 
+            message.set_alias(alias)
             return message
     
     def add_message(self, message):
