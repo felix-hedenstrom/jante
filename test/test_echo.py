@@ -1,6 +1,6 @@
 import util.base_test
 
-class TestBot(util.base_test.BaseTest):
+class TestEcho(util.base_test.BaseTest):
     def test_base(self):
         self.assertEqual(self.eval("!echo test"), "test")
     def test_capitalization(self):

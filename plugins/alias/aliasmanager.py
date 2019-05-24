@@ -90,7 +90,7 @@ class AliasManagerPlugin(ParsingPluginTemplate):
     def parse(self, message):
         #TODO port to jargparse
         if not self._bot.get_config().getboolean('global', 'use_aliases'):
-            return "Aliases are not in use. This plugin should probably be disabled"
+            return "Aliases are not in use. This plugin should probably be disabled."
             
         argv = shlex.split(message.get_text())
         response = ""
