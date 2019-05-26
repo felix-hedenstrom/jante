@@ -13,6 +13,6 @@ class TestCSwap(util.base_test.BaseTest):
         self.assertEqual(self.eval("!cswap --spoon strong test"), "tong strest")
     
     def test_last(self):
+        self.send_message("i like pink unicorns")
 
-        #TODO need a way to send a message without needing to wait for a response.
-        pass
+        self.assertEqual(self.eval("!cswap --last --spoon"), "i pike link unicorns")

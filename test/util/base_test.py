@@ -21,3 +21,6 @@ class BaseTest(unittest.TestCase):
         return self.__evaluator.eval(text, sender=sender)
     def tearDown(self):
         self.__evaluator.shutdown()
+    
+    def send_message(self, m):
+        self.__evaluator.send_message(m)

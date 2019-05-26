@@ -90,7 +90,12 @@ class Evaluator:
     
     def shutdown(self):
         self._bot._shutdown()
+    
+    def send_message(self, m):
+        if not type(m) == JanteMessage:
+            m = JanteMessage(m, sender="testingbot")
 
+        self._bot.fire_event('on_message', message=m)
     def generate_id(self):
         self._id += 1
         return ("testing", self._id)
