@@ -11,7 +11,6 @@ TODO
 
 import shlex, getopt
 
-
 import threading
 import configparser
 import re
