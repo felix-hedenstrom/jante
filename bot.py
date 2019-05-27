@@ -336,13 +336,13 @@ class Bot:
         bad_plugins = []
         for o in obj.__subclasses__():
             if o is not plugins.plugintemplate.PluginTemplate and isinstance(o,type):
-                if not self.__loadplugin(o):
+                if not self.__load_plugin(o):
                     bad_plugins.append(o.__name__)
                 bad_plugins += self.__loadSubClasses(o)
         return bad_plugins
 
     # Loads singular plugin
-    def __loadplugin(self, plugin):
+    def __load_plugin(self, plugin):
         """
         Returns True if plugin was loaded, False otherwise
         """

@@ -175,27 +175,3 @@ class EventHost:
                     newthreads.append(t)
 
             return newthreads
-
-
-
-if __name__ == '__main__':
-    a = EventHost()
-
-    def on_message(message): pass
-
-    a.create_event('on_message', on_message)
-
-    def mylistener(message):
-        print("received a message: " + message)
-
-    def myfilter(message):
-        return len(message) > 2
-
-    def myprocessor(message):
-        return {'message': '((({})))'.format(message)}
-
-    a.add_event_listener('on_message', mylistener, myfilter, myprocessor)
-
-    a.fire_event('on_message', message="hej")
-    a.fire_event('on_message', message="0")
-    a.fire_event('on_message', message="hopp")

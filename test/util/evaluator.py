@@ -28,7 +28,8 @@ class Evaluator:
             self._message_filter = message_filter 
             self._bot.add_event_listener('on_message_sent', self.listener, prefilter=self._message_filter)
             self._messages = []
-        
+       
+
         def listener(self, message):
             with self._message_mutex:
                 self._messages.append(message)
@@ -93,9 +94,13 @@ class Evaluator:
     
     def send_message(self, m):
         if not type(m) == JanteMessage:
-            m = JanteMessage(m, sender="testingbot")
+            # The address does not matter, but needs to be present in case the plugins feel like responding
+            m = JanteMessage(m, sender="testingbot", address="testingbot@local")
 
         self._bot.fire_event('on_message', message=m)
     def generate_id(self):
         self._id += 1
         return ("testing", self._id)
+
+    def get_bot(self):
+        return self._bot
