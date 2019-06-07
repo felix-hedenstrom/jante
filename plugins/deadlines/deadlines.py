@@ -150,8 +150,8 @@ class DeadlinesPlugin(ParsingPluginTemplate):
         
         self.load()
 
-
-        self.paste = self._bot.get_service("paste").paste
+    def paste(self, text, message):
+        return self._bot.get_service("paste").paste(text, message)
 
     def add_deadline(self, guid):
         if self.get_deadline(guid) == None:
