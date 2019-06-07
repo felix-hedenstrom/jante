@@ -1,3 +1,7 @@
+"""
+@Author Felix Hedenström
+"""
+
 import util.base_test
 
 class TestDict(util.base_test.BaseTest):
@@ -24,3 +28,12 @@ class TestDict(util.base_test.BaseTest):
         self.send_message("!dict d123 := 4")
 
         self.assertEqual(int(self.eval("!dict --raw --size")), 4)
+
+    def test_picking(self):
+
+        self.send_message("!dict abc := 0101")
+        self.send_message("!dict abcd")
+
+
+        # Should only have one availible option
+        self.assertEqual(self.eval("!dict -p1"), "0101")
