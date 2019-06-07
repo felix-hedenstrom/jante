@@ -169,10 +169,10 @@ class Bot:
         return self.get_service("paste").paste(text, message)
     def get_data_path(self, plugname, filename):
         if plugname == 'anagram': # TODO: get rid of this special case
-            return '{datadir}/{plugdir}/{filename}'.format(
+            return '{datadir}{plugdir}/{filename}'.format(
                 datadir=self._config['global']['datapath'], plugdir=plugname, filename=filename)
         else:
-            return '{datadir}/{filename}'.format(
+            return '{datadir}{filename}'.format(
                 datadir=self._config['global']['datapath'], filename=filename)
 
     def create_event(self, event_name, prototype):

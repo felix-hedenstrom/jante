@@ -32,18 +32,9 @@ class AKAPlugin(PluginTemplate):
         
         self._registry_mutex = threading.Lock()
         
-        try:
-            self._env_command_prefix = bot.getCommandPrefix()
-        except:
-            self._env_command_prefix = '!'
+        self._env_command_prefix = bot.get_command_prefix()
         
-        if self._env_command_prefix is None:
-            self._env_command_prefix = '!'
-        
-        try:
-            self._config = bot.getConfig('aka')
-        except:
-            self._config = dict()
+        self._config = dict()
         
         self._aka_command = self._config.get('command', 'aka')
         self._registry_filename = bot.get_data_path('aka', self._config.get('filename',
@@ -96,7 +87,7 @@ class AKAPlugin(PluginTemplate):
                 
                 return data
             except Exception as e:
-                self.error('Error loading AKA registry: {}'.format(str(e)))
+                #self.error('Error loading AKA registry: {}'.format(str(e)))
                 return None
     
     def _save_registry(self, filename):
