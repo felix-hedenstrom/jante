@@ -96,14 +96,14 @@ class Bot:
         def show_commands(message):
             self.add_message(message.respond("{}.".format(', '.join(list(sorted(self._commands)))), self.get_nick()))
         def reload_IO(message):
-            self.add_message(jantemessage("Started reloading, this might take a while.", address=message.get_address(), sender=self.get_nick(), is_in_group=message.isInGroup()))
-            self.add_message(jantemessage(self._reload(), address = message.get_address(), isInGroup = message.isInGroup(), recipient=message.get_sender(), sender=self.get_nick()))
+            self.add_message(JanteMessage("Started reloading, this might take a while.", address=message.get_address(), sender=self.get_nick(), is_in_group=message.is_in_group()))
+            self.add_message(JanteMessage(self._reload(), address = message.get_address(), is_in_group = message.is_in_group(), recipient=message.get_sender(), sender=self.get_nick()))
         # Client requests a list of plugins
         def plugins_IO(message):
             with self._mutex:
                 self._plugins = sorted(self._plugins, key=lambda p: inspect.getfile(p.__class__).split("/")[-2])
-                ans = jantetable.getTable([list(map(lambda p: inspect.getfile(p.__class__).split("/")[-2], self._plugins)), list(map(lambda p: p.getDescription(), self._plugins))], ["Plugin", "Description"])
-            self.add_message(jantemessage(ans, address = message.get_address(), isInGroup = message.isInGroup(), recipient = message.get_sender(), sender=self.get_nick()))
+                ans = get_table([list(map(lambda p: inspect.getfile(p.__class__).split("/")[-2], self._plugins)), list(map(lambda p: p.get_description(), self._plugins))], ["Plugin", "Description"])
+            self.add_message(JanteMessage(ans, address = message.get_address(), is_in_group = message.is_in_group(), recipient = message.get_sender(), sender=self.get_nick()))
         def save_command(message):
             """
             Tells all plugins that are listening to the "should_save" event to save.
