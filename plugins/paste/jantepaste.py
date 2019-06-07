@@ -36,7 +36,8 @@ class JantePastePlugin(ParsingPluginTemplate):
         
         If it is an internal message, no pasting will occur.
         """
-         
+        if __debug__:
+            self.log("Pasting...")
         if not self._config.getboolean('paste', 'allow_pasting', fallback=False) or (not original_message == None and type(original_message.getAddress()) == tuple):
             return text
             
