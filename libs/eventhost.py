@@ -53,7 +53,7 @@ class EventHost:
         # when an event becomes available (e.g created), transfer all callbacks from
         #   waitingHandlers[] to events[]
         # when an event becomes unavailable (e.g destroyed), do the opposite
-        self._waitingEventListeners = dict()
+        self._waiting_event_listeners = dict()
 
         self._logger = logger
 
@@ -68,10 +68,10 @@ class EventHost:
     def _add_waiting_event_listener(self, event_name, target, prefilter=None, preprocessor=None):
         with self._events_mutex:
             # if the given event has no waiting list, create it
-            if not event_name in self._waitingEventListeners:
-                self._waitingEventListeners[event_name] = list()
+            if not event_name in self._waiting_event_listeners:
+                self._waiting_event_listeners[event_name] = list()
 
-            self._waitingEventListeners[event_name] += [EventHost.callback(target, prefilter,
+            self._waiting_event_listeners[event_name] += [EventHost.callback(target, prefilter,
                 preprocessor)]
 
     # create an event
@@ -81,16 +81,17 @@ class EventHost:
                 raise Exception("Event keywords must not contain leading underscore: \"{}.{}\".".format(event_name, arg))
 
         with self._events_mutex:
-            self._logger.write('Event created: {}'.format(event_name))
+            if __debug__:
+                self._logger.write('Event created: {}'.format(event_name))
             self._events[event_name] = list()
             self._event_prototypes[event_name] = prototype
 
             # transfer any waiting handlers
-            if event_name in self._waitingEventListeners:
-                for cb in self._waitingEventListeners[event_name]:
+            if event_name in self._waiting_event_listeners:
+                for cb in self._waiting_event_listeners[event_name]:
                     self.add_event_listener(event_name, cb.target, cb.prefilter, cb.preprocessor)
 
-                del self._waitingEventListeners[event_name]
+                del self._waiting_event_listeners[event_name]
 
     # destroy an event
     def destroy_event(self, event_name):
@@ -136,7 +137,7 @@ class EventHost:
                 self._events[event_name].remove(cb)
 
     # fire an event
-    def fire_event(self, _event_name, _eventLogEnabled=True, **kwargs):
+    def fire_event(self, _event_name, **kwargs):
         with self._events_mutex:
             if not _event_name in self._events:
                 raise Exception("No such event \"{}\".".format(_event_name))
@@ -157,7 +158,7 @@ class EventHost:
 
                 raise Exception("fire_event({}) error: {}.".format(_event_name, ", ".join(message)))
 
-            if _eventLogEnabled:
+            if __debug__:
                 self._logger.write('Firing event: {}.'.format(_event_name))
 
             newthreads = list()

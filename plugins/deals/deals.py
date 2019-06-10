@@ -61,10 +61,8 @@ class DealsPlugin(ParsingPluginTemplate):
 
         def loader(timeval):
             if timeval < self._next_load:
-                # self.log('too early: {} < {}'.format(timeval, self._next_load))
                 return
 
-            # self.log('loader firing: {} > {}'.format(timeval, self._next_load))
 
             # TODO: configurable sleep (600) here
             self._next_load = timeval + int(self._config.get('scrape_interval_seconds', 600))
@@ -150,9 +148,6 @@ class DealsPlugin(ParsingPluginTemplate):
                     ans.append('No deals available')
 
             ans = '\n'.join(ans)
-
-            # if __name__ == '__main__':
-                # return ans
 
             return self._bot.get_service("paste").paste(ans, msg)
         else:

@@ -121,13 +121,13 @@ class Bot:
 
 
 
-        def timerThread():
+        def timer_thread():
             while not self._shutdown_called:
                 time.sleep(1.0)
                 t = time.time()
-                self.fire_event('on_timer_tick', _eventLogEnabled=False, timeval=t)
+                self.fire_event('on_timer_tick', timeval=t)
 
-        t = threading.Thread(target=timerThread, name="TimerThreadMain - Sends on_timer_tick events")
+        t = threading.Thread(target=timer_thread, name="timer_thread_main - Sends on_timer_tick events")
         t.start()
         
         with self._mutex:
@@ -191,7 +191,7 @@ class Bot:
         self._threads += self._events.fire_event(event_name, **kwargs)
     
     def number_of_threads(self):
-        self._pruneThreads()
+        self._prune_threads()
         with self._mutex:
             n = len(self._threads)
         return n
@@ -260,6 +260,7 @@ class Bot:
                 preprocessor=command_listener_processor)
         else:
             self._events.add_event_listener('on_message', target, prefilter=command_listener_filter)
+
     def configure_alias(self, message):
         """
         Sets alias if configured to do so,
@@ -276,27 +277,29 @@ class Bot:
     
     def add_message(self, message):
         message = self.configure_alias(message)
-        self.log('enqueued a message: {}'.format(message.get_text()))
+        if __debug__:
+            self.log('enqueued a message: {}'.format(message.get_text()))
 
         self._message_queue.put(message)
 
-    def _waitForThreads(self, threadsthatshouldlive=2):
+    def _wait_for_threads(self, threadsthatshouldlive=2):
         """
         Waits for all but <threadsthatshouldlive> threads to die.
         """
 
-        self._pruneThreads()
+        self._prune_threads()
 
         with self._mutex:
             threadcount = len(self._threads) - threadsthatshouldlive
 
         if threadcount > 0:
-            self.log("Waiting for threads to die.")
-            self.log("Currently {} threads active.".format(threadcount))
+            if __debug__:
+                self.log("Waiting for threads to die.")
+                self.log("Currently {} threads active.".format(threadcount))
 
             while(threadcount > 0):
                 oldthreadcount = threadcount
-                self._pruneThreads()
+                self._prune_threads()
                 with self._mutex:
                     threadcount = len(self._threads) - threadsthatshouldlive
                 if not oldthreadcount == threadcount:
@@ -374,7 +377,7 @@ class Bot:
         with self._mutex:
             self._plugins = []
 
-        self._waitForThreads()
+        self._wait_for_threads()
         bad_plugins = self.__loadSubClasses(plugins.plugintemplate.PluginTemplate)
         if len(bad_plugins):
             self.error(
@@ -387,7 +390,7 @@ class Bot:
         self.log("Done loading plugins.")
 
     # Removes threads that are not active
-    def _pruneThreads(self):
+    def _prune_threads(self):
         with self._mutex:
             self._threads = [t for t in self._threads if t.is_alive()]
 
@@ -449,7 +452,7 @@ class Bot:
             # Add alias to message
             message = self.configure_alias(message)
             # Prints all read lines into stdout
-            if message.get_text().strip() != "":
+            if __debug__ and message.get_text().strip() != "":
 
                 ans = ""
 
@@ -472,15 +475,16 @@ class Bot:
 
             # If there are too many threads running, kill them
             if len(self._threads) > self._threadlimit:
-                self.log("Pruning threads.")
-                self._pruneThreads()
+                if __debug__:
+                    self.log("Pruning threads.")
+                self._prune_threads()
 
             if len(self._threads) > self._threadlimit:
                 self._io.exit("Too many threads, shutting down")
                 self._shutdown()
 
 
-        self._waitForThreads()
+        self._wait_for_threads()
         raise SystemExit()
 
     def start_httpd(self, port, password, keyfile='ssl/key.pem', certfile='ssl/cert.pem'):
@@ -522,10 +526,13 @@ class Bot:
         del self._httpd_routes[route]
     
     def clear_web_routes(self):
-        self.log("Clearing httpd routes")
+        if __debug__:
+            self.log("Clearing httpd routes")
         self._httpd_routes = dict()
+    
     def shutdown(self):
         self._shutdown()
+    
     def _shutdown(self):
         self.fire_event("should_save")
         self._shutdown_called = True
@@ -562,7 +569,7 @@ def main(argv):
     config = configparser.ConfigParser()
     config.read('bot-settings.ini')
     # Run the bot as you would normally
-    b = Bot(args.io, config,testing=False)
+    b = Bot(args.io, config, testing=False)
     b.start()
 
 if __name__ == "__main__":
