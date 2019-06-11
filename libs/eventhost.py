@@ -158,7 +158,7 @@ class EventHost:
 
                 raise Exception("fire_event({}) error: {}.".format(_event_name, ", ".join(message)))
 
-            if __debug__:
+            if __debug__ and False:
                 self._logger.write('Firing event: {}.'.format(_event_name))
 
             newthreads = list()

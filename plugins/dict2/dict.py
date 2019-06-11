@@ -12,7 +12,7 @@ import configparser
 import time
 import datetime
 
-from plugins.parsingplugintemplate import ParsingPluginTemplate
+from ..parsingplugintemplate import ParsingPluginTemplate
 from libs.janteparse import JanteParser, ArgumentParserError
 import libs.nlp.similar as similar
 from collections import defaultdict

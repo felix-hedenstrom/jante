@@ -18,8 +18,6 @@ import re
 import traceback
 import threading
 
-import inspect
-#import os
 # Parses settings.ini
 import configparser
 
