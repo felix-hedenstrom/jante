@@ -13,6 +13,9 @@ from libs.jantepastedb import quickpost, JantePasteDB
 from libs.servicemanager.service import Service
 
 class JantePastePlugin(ParsingPluginTemplate):
+    def get_priority():
+        return 10
+    
     def __init__(self, bot): 
         self._config = configparser.ConfigParser()
         self._config.read("plugins/paste/settings.ini")

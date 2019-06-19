@@ -12,6 +12,10 @@ import traceback
 from abc import ABCMeta, abstractmethod
 
 class PluginTemplate(object):
+    # Return the priority of the plugin. 100 is default. Lower is sooner
+    def get_priority():
+        return 100
+
     def __init__(self, bot, description="NoDescription"):
         self._description = description
         self._bot = bot

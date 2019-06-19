@@ -80,7 +80,7 @@ class JantecoinPlugin(ParsingPluginTemplate):
     def save(self):
         self._money_manager.save()
 
-        with open(self._filename_channels, "w") as f, self._mutex:
+        with open(self._filename_channels, "w+") as f, self._mutex:
             json.dump(self._channels, f)
 
     def passive_gain(self, message):
@@ -106,10 +106,6 @@ class JantecoinPlugin(ParsingPluginTemplate):
             self.save()
             self.__count = 0
 
-    """
-    def float_to_text(self, _float):
-        return r"{}".format(round(_float, self._precision))
-    """
     def parse(self, message):
         try:
             args = self.parser.parse_args(shlex.split(message.get_text()))

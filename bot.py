@@ -12,6 +12,7 @@ import sys
 
 import argparse
 
+import inspect
 import copy
 import time 
 import re
@@ -163,6 +164,10 @@ class Bot:
         return self._config['global']['prefix']
     def get_base_data_path(self):
         return '{datadir}'.format(datadir=self._config['global']['datapath'])
+    
+    def get_main_path(self):
+        return sys.path[0]  
+    
     def paste(self, text, message=None):
         return self.get_service("paste").paste(text, message)
     def get_data_path(self, plugname, filename):
@@ -333,14 +338,14 @@ class Bot:
             self.error(errormsg)
             return "Could not reload all modules, check stacktrace."
 
-    def __loadSubClasses(self, obj):
+    def __find_sub_classes(self, obj):
         bad_plugins = []
-        for o in obj.__subclasses__():
-            if o is not plugins.plugintemplate.PluginTemplate and isinstance(o,type):
-                if not self.__load_plugin(o):
-                    bad_plugins.append(o.__name__)
-                bad_plugins += self.__loadSubClasses(o)
-        return bad_plugins
+        
+        plugins_ = list(filter(lambda p: p is not plugins.plugintemplate.PluginTemplate and isinstance(p,type), obj.__subclasses__()))
+        
+        for p in plugins_:
+            plugins_ += self.__find_sub_classes(p)
+        return plugins_
 
     # Loads singular plugin
     def __load_plugin(self, plugin):
@@ -376,7 +381,13 @@ class Bot:
             self._plugins = []
 
         self._wait_for_threads()
-        bad_plugins = self.__loadSubClasses(plugins.plugintemplate.PluginTemplate)
+        bad_plugins = []
+        plugins_ = self.__find_sub_classes(plugins.plugintemplate.PluginTemplate)
+        
+        for plug in sorted(plugins_, key=lambda p: p.get_priority()):
+            if not self.__load_plugin(plug):
+                bad_plugins.append(plug.__name__)
+
         if len(bad_plugins):
             self.error(
             """
@@ -538,6 +549,8 @@ class Bot:
         if self._httpd != None:
             self._httpd.shutdown()
             self._httpd = None
+        
+        self._wait_for_threads()
 
     def error(self, text):
         self._io.error(text)
@@ -559,13 +572,18 @@ def main(argv):
     g.add_argument('-b', '--barebones', action='store_const', const="old", dest="io", help="Use a barebones local IO system. Mainly for testing things on a local machine. Less functional than --local.")
     g.add_argument('-o', '--old', action='store_const', const="old", dest="io", help="Deprecated name for -b.")
     g.add_argument('-l', '--local', action='store_const', const="local", dest="io", help="Use a curses based local IO system. Mainly for testing things on a local machine.")
-
-
+    g.add_argument('--test', action='store_true', help="Run unit tests")
+    
     # Parse arguments
     args = parser.parse_args(argv)
     
+    if args.test:
+        import unittest
+        suite = unittest.TestLoader().discover("{}/test/".format(sys.path[0]))
+        unittest.TextTestRunner().run(suite)
+
     config = configparser.ConfigParser()
-    config.read('bot-settings.ini')
+    config.read('{}/bot-settings.ini'.format(sys.path[0]))
     # Run the bot as you would normally
     b = Bot(args.io, config, testing=False)
     b.start()
